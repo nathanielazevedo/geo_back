@@ -1,0 +1,85 @@
+import express from "express";
+import { SuperfaceClient } from "@superfaceai/one-sdk";
+import cors from "cors";
+
+import { createClient } from "@supabase/supabase-js";
+import * as dotenv from "dotenv";
+dotenv.config();
+
+// Create a single supabase client for interacting with your database
+
+const supabase = createClient(
+  "https://tuqmjorsulkkrymugcao.supabase.co",
+  process.env.SUPABASE_KEY
+);
+
+const app = express();
+app.use(cors());
+app.set("trust proxy", true);
+
+const sdk = new SuperfaceClient();
+
+async function run(ip) {
+  // Load the profile
+  const profile = await sdk.getProfile("address/ip-geolocation@1.0.1");
+
+  // Use the profile
+  const result = await profile.getUseCase("IpGeolocation").perform(
+    {
+      ipAddress: "68.101.243.158",
+    },
+    {
+      provider: "ipdata",
+      security: {
+        apikey: {
+          apikey: "6bb10d68409e992e7dc52a625b70ce26c4ef2d808d9b2e1417b5005d",
+        },
+      },
+    }
+  );
+
+  // Handle the result
+  try {
+    const data = result.unwrap();
+    return data;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+app.get("/", async (req, res) => {
+  try {
+    const obj = await run(req.ip);
+    Object.keys(obj).forEach((str) => {
+      if (str !== "latitude" && str !== "longitude") {
+        obj[str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)] =
+          obj[str];
+        delete obj[str];
+      } else {
+        obj[str] = Math.round(obj[str] * 100) / 100;
+      }
+    });
+    const { data, error } = await supabase
+      .from("locations")
+      .insert(obj)
+      .select();
+    if (error) throw new Error(error);
+    res.send(data[0]);
+  } catch (error) {
+    res.send(500, error);
+  }
+});
+
+app.get("/points", async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("locations").select("*");
+    if (error) throw new Error(error);
+    res.send(data);
+  } catch (error) {
+    res.send(500, error);
+  }
+});
+
+app.listen(3000, () => {
+  console.log("Server listening on 3000");
+});
