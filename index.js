@@ -26,7 +26,7 @@ async function run(ip) {
   // Use the profile
   const result = await profile.getUseCase("IpGeolocation").perform(
     {
-      ipAddress: "68.101.243.158",
+      ipAddress: ip,
     },
     {
       provider: "ipdata",
@@ -66,7 +66,8 @@ app.get("/", async (req, res) => {
     if (error) throw new Error(error);
     res.send(data[0]);
   } catch (error) {
-    res.send(500, error);
+    console.log(error);
+    res.status(500).send(error);
   }
 });
 
@@ -76,7 +77,8 @@ app.get("/points", async (req, res) => {
     if (error) throw new Error(error);
     res.send(data);
   } catch (error) {
-    res.send(500, error);
+    console.log(error);
+    res.status(500).send(error);
   }
 });
 
