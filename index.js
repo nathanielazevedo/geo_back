@@ -27,9 +27,10 @@ const requestOptions = {
 };
 
 async function run(ip) {
+  console.log(ip)
   try {
     const key = process.env.GEO_KEY;
-    const url = `https://api.ipgeolocation.io/v2/ipgeo?apiKey=${key}&ip=8.8.8.8`;
+    const url = `https://api.ipgeolocation.io/v2/ipgeo?apiKey=${key}&ip=${ip}`;
     const res = await fetch(url, requestOptions);
 
     if (!res.ok) {
@@ -47,30 +48,29 @@ async function run(ip) {
 
 
 app.get("/", async (req, res) => {
-  console.log("hitting");
   try {
     const obj = await run(req.ip);
-
+    console.log(obj)
     if (!obj) {
       throw new Error("Geo lookup returned null or undefined");
     }
+    console.log(obj)
+    const cleanedObj = {  ip_address: obj.ip,
+    country: obj.location.country_name,
+    country_code: obj.location.country_code2,
+    locality: obj.city,
+    region: obj.location.state_prov,
+    latitude: parseFloat(obj.location.latitude),
+    longitude: parseFloat(obj.location.longitude),
+    postal_code: obj.location.zipcode,
+    time_zone: obj.location.time_zone?.name ?? null }
 
-    Object.keys(obj).forEach((str) => {
-      if (str !== "latitude" && str !== "longitude") {
-        obj[str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)] =
-          obj[str];
-        delete obj[str];
-      } else {
-        obj[str] = Math.round(obj[str] * 100) / 100;
-      }
-    });
 
     const { data, error } = await supabase
       .from("locations")
-      .insert(obj)
+      .insert(cleanedObj)
       .select();
 
-    console.log("error dog", data);
     if (error) throw new Error(error.message);
 
     res.send(data[0]);
@@ -86,6 +86,7 @@ app.get("/points", async (req, res) => {
     const { data, error } = await supabase.from("locations").select("*");
     console.log(error)
     if (error) throw new Error(error);
+    console.log(data)
     res.send(data);
   } catch (error) {
     console.log(error);
