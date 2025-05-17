@@ -9,7 +9,7 @@ dotenv.config();
 // Create a single supabase client for interacting with your database
 
 const supabase = createClient(
-  "https://tuqmjorsulkkrymugcao.supabase.co",
+  "https://prvlhoizntfiogewpuey.supabase.co",
   process.env.SUPABASE_KEY
 );
 
