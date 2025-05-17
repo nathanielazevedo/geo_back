@@ -32,7 +32,7 @@ async function run(ip) {
       provider: "ipdata",
       security: {
         apikey: {
-          apikey: "6bb10d68409e992e7dc52a625b70ce26c4ef2d808d9b2e1417b5005d",
+          apikey: process.env.GEO_KEY,
         },
       },
     }
